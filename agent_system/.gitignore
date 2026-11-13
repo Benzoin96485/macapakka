@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.env
+.env.*
+!.env.example
+runs/
+dist/
+build/
+
+secrets/*
+!secrets/*.example

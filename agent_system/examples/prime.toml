@@ -1,0 +1,13 @@
+# Prime Inference. Credentials are read at runtime, never saved in run config.
+[llm]
+base_url = "https://api.pinference.ai/api/v1"
+model = "z-ai/glm-5.3"
+base_url_env = "PRIME_BASE_URL"
+model_env = "PRIME_MODEL"
+api_key_env = "PRIME_API_KEY"
+secrets_file = "secrets/prime.env"
+team_id_env = "PRIME_TEAM_ID"
+include_usage = true
+tool_mode = "native"
+max_output_tokens = 32000
+timeout_seconds = 600

@@ -1,0 +1,37 @@
+# Observed local installations in this workspace. No keys, weights or fonts are bundled.
+[llm]
+base_url_env = "PARLEY_BASE_URL"
+model_env = "PARLEY_MODEL"
+api_key_env = "PARLEY_API_KEY"
+secrets_file = ""
+include_usage = false
+team_id_env = "PARLEY_TEAM_ID"
+base_url = "https://parley.api.mit.edu/v1"
+model = "claude-sonnet-5-5"
+tool_mode = "native"
+max_output_tokens = 32000
+max_total_tokens = 16000000
+max_calls = 700
+max_turns_per_window = 32
+timeout_seconds = 600
+
+[analysis]
+python = "/Users/weiliangluo/src/vibacappella-claude/_work/venv/bin/python"
+separation = "demucs"
+transcriber = "basic_pitch"
+
+[arrangement]
+title = "EYKM - Sonnet 5.5 Agent Arrangement"
+window_bars = 8
+
+[render]
+python = "/Users/weiliangluo/src/vibacappella-claude/_work/venv/bin/python"
+pdf_python = "/Users/weiliangluo/miniconda3/envs/qmmm/bin/python"
+audio_backend = "samples"
+pdf_backend = "proof"
+soundfont = "/Applications/MuseScore 4.app/Contents/Resources/sound/MS Basic.sf3"
+font_file = "/Applications/MuseScore 4.app/Contents/Resources/fonts/FreeSerif.ttf"
+musescore = "/Applications/MuseScore 4.app/Contents/MacOS/mscore"
+ffmpeg = "/opt/homebrew/bin/ffmpeg"
+ffprobe = "/opt/homebrew/bin/ffprobe"
+mp3 = true

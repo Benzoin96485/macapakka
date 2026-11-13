@@ -1,0 +1,32 @@
+# Only project source directories are eligible for tracking.
+/*
+!/.gitignore
+!/README.md
+!/agent_system/
+!/tools/
+!/legacy/
+!/.github/
+
+# Credentials and local state, at every depth.
+**/secrets/**
+!agent_system/secrets/prime.env.example
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.p12
+*.pfx
+*credentials*.json
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.cache/
+runs/
+dist/
+build/
+*.log

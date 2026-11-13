@@ -1,0 +1,44 @@
+# Endpoint verified against MIT Parley docs on 2026-11-13.
+# PARLEY_MODEL can override the tested default; API key stays in the environment.
+# Never use https://parley-docs.mit.edu as the API endpoint.
+[llm]
+secrets_file = ""
+include_usage = false
+team_id_env = "PARLEY_TEAM_ID"
+base_url = "https://parley.api.mit.edu/v1"
+model = "claude-sonnet-5-5"
+base_url_env = "PARLEY_BASE_URL"
+model_env = "PARLEY_MODEL"
+api_key_env = "PARLEY_API_KEY"
+endpoint = "chat/completions"
+auth_header = "Authorization"
+auth_prefix = "Bearer "
+tool_mode = "native"                    # use "json" if native tools are unsupported
+max_tokens_field = "max_tokens"          # some models require "max_completion_tokens"
+max_output_tokens = 32000
+timeout_seconds = 600
+max_total_tokens = 800000
+max_calls = 512
+max_turns_per_window = 12
+
+[analysis]
+separation = "demucs"
+demucs_model = "htdemucs_6s"
+device = "cpu"
+transcriber = "basic_pitch"
+lead_backend = "basic_pitch"             # optional: "game", with game_model_dir
+meter = "auto"                           # override known meter, e.g. "3/4"
+tempo = 0.0                              # 0 = estimate; e.g. 126.0 when known
+
+[arrangement]
+title = "A cappella arrangement"
+window_bars = 4
+max_phrase_seconds = 10.0
+whistle_min_confidence = 0.8
+
+[render]
+audio_backend = "samples"                # samples / musescore / fluidsynth
+pdf_backend = "musescore"                # musescore / proof
+soundfont = "/PATH/TO/LOCAL/SOUNDFONT.sf3"
+musescore = "/PATH/TO/MUSESCORE"
+mp3 = true

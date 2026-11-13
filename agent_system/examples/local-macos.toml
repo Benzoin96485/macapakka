@@ -1,0 +1,28 @@
+# Observed local installations in this workspace. No keys, weights or fonts are bundled.
+[llm]
+base_url = "https://api.pinference.ai/api/v1"
+model = "z-ai/glm-5.3"
+tool_mode = "native"
+max_output_tokens = 32000
+timeout_seconds = 600
+
+[analysis]
+python = "/Users/weiliangluo/src/vibacappella-claude/_work/venv/bin/python"
+separation = "demucs"
+transcriber = "basic_pitch"
+
+[arrangement]
+title = "A cappella arrangement"
+window_bars = 4
+
+[render]
+python = "/Users/weiliangluo/src/vibacappella-claude/_work/venv/bin/python"
+pdf_python = "/Users/weiliangluo/miniconda3/envs/qmmm/bin/python"
+audio_backend = "samples"
+pdf_backend = "proof"
+soundfont = "/Applications/MuseScore 4.app/Contents/Resources/sound/MS Basic.sf3"
+font_file = "/Applications/MuseScore 4.app/Contents/Resources/fonts/FreeSerif.ttf"
+musescore = "/Applications/MuseScore 4.app/Contents/MacOS/mscore"
+ffmpeg = "/opt/homebrew/bin/ffmpeg"
+ffprobe = "/opt/homebrew/bin/ffprobe"
+mp3 = true

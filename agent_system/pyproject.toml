@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vibacappella-agent"
+version = "0.1.0"
+description = "Evidence-led audio-to-a-cappella arranging agent"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+audio = ["numpy>=1.24,<3", "scipy>=1.10", "librosa>=0.10,<0.12", "soundfile>=0.12", "basic-pitch[onnx]>=0.4,<0.5", "demucs>=4,<5"]
+game = ["onnxruntime>=1.16"]
+samples = ["numpy>=1.24,<3", "scipy>=1.10", "soundfile>=0.12"]
+pdf = ["reportlab>=4"]
+
+[project.scripts]
+vibacappella = "vibacappella.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["vibacappella*"]
