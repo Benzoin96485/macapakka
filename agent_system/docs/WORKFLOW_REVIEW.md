@@ -1,57 +1,57 @@
-# 从一次编曲任务到可复用 agent
+# From a single arrangement task to a reusable agent
 
-本系统回顾的是本目录 v1/v2/v3 与相邻 Claude 项目中实际发生的工作，不把模型提示词当作完整工作流。
+This review describes work performed in the local v1/v2/v3 projects and the neighboring Claude project. Model prompts are only one part of the workflow.
 
-## 1. 输入确认与音乐目标
+## 1. Confirm the input and musical goal
 
-原任务需要从录音得到 Lead + SATB + VP + 口哨，并保留原曲丰富的色彩。两项目音频曾通过哈希确认是同一来源。演出声部与排练试听乐器是两层：五个人声用钢琴听音高，口哨用长笛，VP 用鼓组，并不代表成品演出要加入钢琴。
+The original task required Lead + SATB + VP + Whistle while preserving the recording's harmonic color. Hashes confirmed that both projects used the same source audio. Performance roles and rehearsal playback instruments are separate: piano renders the five vocal parts, flute renders Whistle, and drums render VP. This does not add piano to the performance arrangement.
 
-通用化：输入快照、时长和哈希绑定证据；声音预置只存在于导出层。每个 run 独立保存，不能覆盖已排练的旧版本。
+The reusable system binds evidence to an input snapshot, duration, and hash. Playback presets belong to the export layer. Each run is stored separately so that new work cannot overwrite a version already used in rehearsal.
 
-## 2. 分离、扒谱、分句不是一个任务
+## 2. Separate source separation, transcription, and phrasing
 
-Demucs 提供声部线索，GAME 与 Basic Pitch 提供音符候选。混合音频上的主旋律 f0 会受到背景和泛音影响，钢琴分离也可能有人声泄漏。先得到候选，再根据旋律连续性、持续时间与上下文决定用途；不能把每个检测结果都塞进谱。
+Demucs supplies source clues; GAME and Basic Pitch supply note candidates. Melody f0 from a mix can be affected by backing vocals and harmonics, and piano stems can contain vocal leakage. Candidate selection depends on melodic continuity, duration, and context.
 
-通用化：本地 worker 独立于 API 模型，保存候选的源、秒数、音高、置信诊断。昂贵步骤缓存；分析依赖缺失会明确失败。LLM 读取结构化证据而非声称自己听过未上传的声音。
+A local worker operates independently of the API model and stores each candidate's source, time, pitch, and confidence diagnostics. Expensive steps are cached; missing analysis dependencies cause explicit failures. The LLM reads structured evidence rather than claiming to have heard audio that was never uploaded.
 
-## 3. 时间轴先于谱面
+## 3. Establish timing before notation
 
-原曲前奏、主体和尾声不能全部用单一等速网格。v3 使用原录音对应的自由速度边界，并检查音乐时长。歌词对齐和延音也必须基于相同的时间映射。
+The introduction, main body, and ending cannot always share one constant-tempo grid. The v3 workflow used boundaries tied to the recording's flexible timing and checked the resulting musical duration. Lyrics and ties require the same mapping.
 
-通用化：源秒数↔tick anchors 与逐小节拍号是共同数据。当前自动估计只提供初稿，允许导入含弱起、变拍和 rubato 的校订证据；不能把自动拍号识别夸成可靠完成。
+Source-seconds-to-tick anchors and per-bar meters are shared data. Automatic estimates are drafts. Corrected evidence can describe pickups, changing meter, and rubato; automatic meter detection is not presented as a reliable final decision.
 
-## 4. 保持和声的实际音色
+## 4. Preserve the harmony in the sounding notes
 
-v2 的固定和弦表和整小节取根音方法丢失 sus、转位、七/九音和半小节变化。仅把和弦文字改回来还不够：SATB 真正发出的音也要包含色彩音。
+The v2 fixed chord table and whole-bar root selection lost suspensions, inversions, sevenths, ninths, and half-bar changes. Restoring chord labels alone was insufficient: the actual SATB notes also needed the defining tones.
 
-通用化：和声片段、候选与锁定状态独立存在。检查 `required_pcs` 与 `bass_pc`；已有主题不被强制吸附到新和弦。自动候选是需要复核的解释，人工参考可锁定，LLM 不能凭美感任意重配。
+Harmony segments, candidates, and locks are explicit data. Validation checks `required_pcs` and `bass_pc`. Existing themes are not forced onto a replacement chord template. Automatic candidates require review, and locked references cannot be freely reharmonized by the LLM.
 
-## 5. 织体、器乐身份与背景人声
+## 5. Preserve texture, instrument identity, and backing vocals
 
-钢琴原本的动机和运动线需要转换成可唱的分工，而不是把和弦轮流摊成机械琶音。原长笛才对应口哨；前奏/尾声钢琴主题仍属于人声。背景演唱与新加的和声铺底是不同证据级别。
+Piano motives and moving lines need singable role assignments. Spreading chord tones into repetitive arpeggios loses that material. Whistle follows actual flute evidence; piano themes in introductions and endings remain vocal material. Original backing vocals and newly composed harmonic support have different evidence status.
 
-通用化：工具按原起音和音高类分配钢琴素材；LLM 可改节奏、连音和取舍，但每个来源音都要追踪。背景角色单列。`other` 不被当作长笛，缺证据就显式保留休止与核对项。
+Tools assign piano material using source onsets and pitch classes. The LLM can revise rhythm, ties, and selection while retaining source tracking. Backing roles are accounted for separately. The `other` stem is not automatically flute; absent evidence produces rests and an explicit review item.
 
-## 6. 单人 VP 是编配工作
+## 6. Arrange VP for one performer
 
-原分频段鼓起音会把一次军鼓误报在几个频段；照抄多轨鼓组不能成为一位人的口技谱。还需要入口、强弱、呼吸、段落推进和 fill。
+Band-based drum onset analysis can report one snare hit in several frequency bands. Copying simultaneous drum tracks does not produce a playable single-person vocal percussion part. Entries, dynamics, breathing, transitions, and fills also need design.
 
-通用化：同一格选择一个发音，按源起音与段落策略控制疏密；创作的镲/填充标记 editorial。独立 VP 试听与分谱必须交付，便于听出被混音掩盖的问题。
+The system selects one articulation per grid position and controls density using source onsets and section strategy. Composed cymbal gestures and fills are marked editorial. Separate VP audio and notation help expose problems hidden by the full mix.
 
-## 7. 编配与审校分开上下文
+## 7. Give arrangement and review separate contexts
 
-一次长回答直接生成整首歌容易忘记最初约束，也不适合逐小节改错。编配者的判断需要另一轮证据检查。
+Generating an entire song in one long answer makes constraints easy to forget and revisions difficult to target. Arrangement decisions need another evidence review.
 
-通用化：同一个 API 模型承担两个有不同任务的逻辑角色。先完成分窗编配，再在独立上下文中复核；每步有工具结果、预算和检查点。机器检查独立于 LLM 自我评价；没有调用 `finish` 或有关键错误都不能进入成功导出。
+The same API model serves two logical roles with separate tasks. Windowed arrangement is followed by review in a fresh context. Each step has tool results, a budget, and a checkpoint. Machine validation is independent of LLM self-assessment. Missing `finish` calls or critical errors prevent successful export.
 
-## 8. 导出是另一条必须验证的链路
+## 8. Verify the export chain
 
-v3 的 MuseScore CLI 因当前系统 GUI 环境无法初始化，最终使用了本地 MS Basic 采样，而非伪称 MuseScore 直接导出。PDF 与音轨也做过逐格检查。
+The historical v3 MuseScore CLI could not initialize in the available GUI environment, so audio used local MS Basic samples. It was not described as direct MuseScore export. Notation and audio received event-level checks.
 
-通用化：支持显式选择 MuseScore、FluidSynth 或项目采样器；失败不静默换引擎。MusicXML、MIDI、PDF、音轨都来自 canonical score，记录生成后端与音库哈希。校样 PDF 与正式排版的边界公开说明。
+The reusable system explicitly selects MuseScore, FluidSynth, or the project sampler and does not silently switch engines after failure. MusicXML, MIDI, PDF, and audio share a canonical score. Backend identity and sound-library hashes are recorded. Proof PDFs are distinguished from publication engraving.
 
-## 9. 最终状态仍然是待排练草稿
+## 9. Deliver a draft for rehearsal
 
-哈希、时值、事件比对和音高范围能发现程序错误，不能证明听辨、音色和音乐表达正确。自动检查不应取代真人听审。
+Hashes, durations, event comparisons, and range checks catch software errors. They do not establish transcription accuracy, timbral quality, or musical expression, and do not replace human listening.
 
-通用化：保留 `human_listening_review: false` 与未解决警告；产出易于独听和改谱的资料。当前没有隐藏的“自动审核即真人认可”状态，也没有承诺任意录音都能一次生成演出版总谱。
+The system retains `human_listening_review: false` and unresolved warnings, and exports materials suited to isolated listening and score revision. It does not treat automated approval as human acceptance or promise a performance-ready score from arbitrary audio in one pass.

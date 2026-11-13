@@ -1,15 +1,15 @@
-# 数据契约与扩展接口
+# Data contract and extension interfaces
 
-## 时间与来源
+## Timing and provenance
 
-所有谱面音高使用实际发声音高的 MIDI 编号；Tenor 的八度谱号属于显示。每四分音符 480 ticks，当前编辑网格 120 ticks（十六分音符）。时间轴必须严格递增。
+All score pitches use sounding MIDI note numbers; the Tenor octave clef is a display convention. There are 480 ticks per quarter note, with a current editing grid of 120 ticks (sixteenth notes). Timing anchors must increase strictly.
 
-`evidence.json` 是一次 run 的固定分析输入，含原录音 SHA-256。若人工改了节拍、和声、器乐归属，使用 `--evidence` 开一个新 run，不能覆盖旧 run 的证据。
+`evidence.json` is the fixed analysis input for a run and includes the original audio SHA-256. Human corrections to timing, harmony, or instrument attribution require a new run using `--evidence`; do not overwrite evidence in an existing run.
 
 ```json
 {
   "schema_version": 1,
-  "audio_sha256": "录音文件的实际 SHA-256",
+  "audio_sha256": "actual-sha256-of-the-recording",
   "duration_seconds": 2.0,
   "timing": {"anchors": [
     {"tick": 0, "seconds": 0.0},
@@ -28,31 +28,33 @@
     "locked": true, "confidence": "reviewed_reference",
     "candidates": [{"symbol": "Cadd9", "pcs": [0,2,4,7],
                     "required_pcs": [2,4], "bass_pc": 0, "score": 1.0}]}],
-  "alerts": ["音符置信值不是已校准的概率。"],
+  "alerts": ["Note confidence values are not calibrated probabilities."],
   "provenance": {"human_review": false}
 }
 ```
 
-上例是字段说明，不是完整旋律。真实样本在 `runs/demo-final/evidence.json`；可用 `demo.fixture()` 重新生成。
+This illustrates fields rather than a complete melody. Generate a working sample with `demo.fixture()` or the demo command; historical run files are not included in the repository.
 
-| 字段 | 含义 |
+| Field | Meaning |
 |---|---|
-| `timing.anchors` | tick ↔ 原录音秒数的分段线性映射；支持自由速度，不使用一个全曲 BPM 硬套 |
-| `bars` | 可逐小节变拍；短于拍号的首/尾小节允许作为弱起/结尾，需人工校订 |
-| `notes[].source` | piano/guitar/bass/vocals/lead/backing/flute/other 等实际分析来源 |
-| `role` | candidate / lead / backing / backing_candidate / flute；编配前的证据角色 |
-| `instrument_confidence` | flute 归属阈值；不能只因“旋律在高音”就填写 1.0 |
-| `syllable` | 可选的已对齐歌词音节；不是完整歌词 ASR 输入接口 |
-| `harmonies[].locked` | 参考和声不可被 LLM 换成其他候选；校订必须产生新证据版本 |
-| `required_pcs` | 实际声部必须出现的关键音高类，包含三音及决定色彩的七/九/sus 音等 |
-| `bass_pc` | 根音或斜杠和弦低音 |
-| `score` / `confidence` | 转写/检索的诊断量，不声称是正确率 |
+| `timing.anchors` | Piecewise-linear mapping between ticks and source-audio seconds; supports rubato without forcing one BPM across the song |
+| `bars` | Per-bar meter; shorter first/final bars can represent pickups or endings and require review |
+| `notes[].source` | Actual analysis source, such as piano, guitar, bass, vocals, lead, backing, flute, or other |
+| `role` | Evidence role before arrangement: candidate, lead, backing, backing_candidate, or flute |
+| `instrument_confidence` | Flute attribution confidence used by the threshold; a high melody alone does not justify 1.0 |
+| `syllable` | Optional aligned lyric syllable, not a full lyric-ASR input interface |
+| `harmonies[].locked` | Prevents the LLM from replacing reference harmony with another candidate; corrections require new evidence |
+| `required_pcs` | Defining pitch classes required in the sounding parts, including thirds and relevant sevenths, ninths, or suspensions |
+| `bass_pc` | Root or slash-chord bass pitch class |
+| `score` / `confidence` | Transcription/retrieval diagnostics, not claimed accuracy rates |
 
-## 事件谱
+## Event score
 
-`score.json` 包含同样的 bars/timing、所选和声、七声部每小节事件，以及决策记录。事件至少有：
+`score.json` contains the same bars and timing, selected harmony, per-bar events for seven parts, and decision records.
 
-可选的 `source_roles` 保存 LLM 对人声候选的角色解释（lead/backing_candidate/ignore 与原因）。它仅能引用原有 vocals/lead/backing 候选，不改变音高、时刻或器乐身份；原始 evidence 不被覆盖。
+Optional `source_roles` records the LLM's interpretation of vocal candidates as lead, backing_candidate, or ignore, with reasons. It may reference only existing vocals/lead/backing candidates and cannot alter their pitch, timing, or instrument identity. Original evidence remains unchanged.
+
+A typical note event contains:
 
 ```json
 {
@@ -67,25 +69,25 @@
 }
 ```
 
-`pitch: null` 是休止。offset 从当前小节起算，必须完整覆盖小节；工具会补上空隙休止。单个事件不跨小节，跨小节长音用同音高的 `tie_start`/`tie_stop`；MIDI/音频会合并延音，不重新起音。
+`pitch: null` denotes a rest. Offsets are relative to the current bar, and events must cover the whole bar; tools fill gaps with rests. Individual events do not cross bar boundaries. Cross-bar sustained notes use matching pitches with `tie_start`/`tie_stop`; MIDI and audio merge ties without retriggering.
 
-来源音符允许八度重置，但不能保留原 source ID 又偷偷更改音高类。主唱和口哨必须有来源；`harmonic_support`、`editorial`、`vp_editorial` 是明确的编配创作。`vp_source` 关联鼓起音 ID。
+Source notes may be octave-displaced, but their pitch classes cannot change while retaining the original source ID. Lead and Whistle require provenance. `harmonic_support`, `editorial`, and `vp_editorial` explicitly mark newly arranged material. `vp_source` references drum-onset IDs.
 
-VP 音节映射：K→36、pf→38、ka→37、t→42、ts→46、ksh→49、dm→45（GM MIDI）。每个人声/VP 声部单声，不能出现重叠事件。
+VP syllables map to GM MIDI notes: K=36, pf=38, ka=37, t=42, ts=46, ksh=49, dm=45. Every vocal and VP part is monophonic; overlapping events are invalid.
 
-## 添加工具/模型
+## Adding tools and models
 
-1. 在本地分析 worker 新增适配器，输出上述 `notes` / `drums` / 时间映射。不要让模型输出直接写最终 MusicXML。
-2. 新增编配工具时，在 `agent.py` 的 `SCHEMAS` 声明 schema，并在 `MusicTools` 绑定对应方法。工具通过 `save()` 保存版本；不能向 LLM 暴露任意 shell、网络 URL 或文件路径。
-3. 新 provider 实现 `complete(messages, schemas) -> assistant_message`，保持标准化 `tool_calls`。不要绕过持久化预算、密钥处理和重试限制。
-4. 新音轨引擎读取同一 `sound_events()`，正确处理延音与时间 anchors；导出后检查真实文件。不能在失败时静默替换成振荡器并继续称为指定采样引擎。
-5. 新谱面功能先扩展 canonical schema、校验器与 MusicXML/MIDI 反向核对，再扩展 PDF 渲染。
+1. Add a local analysis-worker adapter that outputs notes, drums, and timing mappings as above. Do not let model output directly write final MusicXML.
+2. Declare new arrangement-tool schemas in `agent.py` under `SCHEMAS` and bind methods in `MusicTools`. Save versions through `save()`. Do not expose arbitrary shell access, network URLs, or file paths to the LLM.
+3. Implement providers as `complete(messages, schemas) -> assistant_message`, retaining normalized `tool_calls`, persistent budgets, credential handling, and bounded retries.
+4. New audio engines must read the same `sound_events()`, handle ties and timing anchors, and inspect actual exported files. Do not silently replace a failed engine with an oscillator while retaining the original engine label.
+5. Extend the canonical schema, validator, and MusicXML/MIDI round-trip comparisons before adding PDF support for new notation features.
 
-## run 文件
+## Run files
 
-- `input/`：原文件快照；`work/`：统一 WAV、分轨、转写缓存。
-- `evidence.json`：固定候选证据；`score.json`：当前事件谱。
-- `revisions/`：事件谱修订；`agent/`：两个角色每个窗口的消息检查点。
-- `events.jsonl`：工具输入、结果与阶段事件；`budget.json`：跨恢复累计的 API 预算。
-- `validation.json`：音乐结构检查；`exports/revision-N/`：总谱、音轨、审听页、审校记录、manifest。
-- `state.json`：created → analyzing → analyzed → arranging → exporting → exported_draft_needs_review；异常进入 failed，并保留前面产物。
+- `input/`: original-file snapshot; `work/`: normalized WAV, stems, and transcription caches.
+- `evidence.json`: fixed candidate evidence; `score.json`: current event score.
+- `revisions/`: score snapshots; `agent/`: per-window message checkpoints for both roles.
+- `events.jsonl`: tool inputs, results, and stage events; `budget.json`: API budget accumulated across resumes.
+- `validation.json`: musical structure checks; `exports/revision-N/`: scores, audio, review page, review notes, and manifest.
+- `state.json`: created, analyzing, analyzed, arranging, exporting, then exported_draft_needs_review. Exceptions set failed while preserving earlier artifacts.

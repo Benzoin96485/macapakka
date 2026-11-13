@@ -1,5 +1,5 @@
-# 历史源码
+# Historical source
 
-保留早期实验的 Python 脚本，子路径对应迁移前的位置；仅归档源码，不包含实验结果、录音、分析数据和第三方依赖。
+This directory preserves Python scripts from earlier experiments. Subpaths reflect their locations before migration. It contains source only, without experimental results, recordings, analysis data, or third-party dependencies.
 
-这些脚本仍可能依赖原工作目录、旧版数据或本机安装，不保证独立运行。后续开发以 `../agent_system` 为主，历史代码用于查阅。实验数据继续保留在原本机目录。
+These scripts may depend on their original working directories, historical data, or machine-specific installations and are not guaranteed to run independently. Active development takes place in [`../agent_system`](../agent_system/README.md); this archive is for reference. Experimental data remains in its original local directories.

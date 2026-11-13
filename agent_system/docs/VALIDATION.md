@@ -1,73 +1,77 @@
-# 实际验证记录
+# Validation record
 
-日期：2026-11-13。代码和测试在项目本地执行，没有调用收费 LLM。
+Date: 2026-11-13. Offline checks and historical live-provider checks are recorded separately below. Historical run data and exported results remain local and are not included in the repository.
 
-## 自动回归
+## Automated regression tests
 
 ```sh
 cd agent_system
 python3 -m unittest discover -s tests -v
 ```
 
-25 项测试覆盖：
+The current suite has 29 tests. The initial validation used 25 tests, and the later Sonnet run used 28. Coverage includes:
 
-- 编配/审校两个角色的完整工具循环；API 请求适配器与工具循环的组合测试。
-- 中断后从检查点恢复，不重复添加音符；已完成窗口不再次调用模型。
-- 参考和声锁定；和弦标签正确但实际九音缺失仍能被发现。
-- 原钢琴不能进入口哨；改成 editorial 标签不能绕过主唱来源规则。
-- 主唱音高类、背景角色解释、原始候选保持不变、单人口技与断开的延音。
-- 八份 MusicXML/MIDI 逐格/逐音对照；3/4、6/8、短尾小节、变速、延音合并。
-- API 原生工具请求、JSON 退化协议、密钥脱敏、401 不重试、429 有界重试、预算持久化、非法 URL、畸形工具响应拒绝。
-- 路径边界、同一 run 的单写者锁、不完整事件谱不能宣告完成。
-- 导出要求检查结果覆盖整首、且事件谱摘要完全匹配，旧检查结果不能用于已修改的谱。
+- Complete arrangement and review tool loops, including integration with the HTTP request adapter.
+- Checkpoint recovery without duplicate notes and without recalling the model for completed windows.
+- Locked reference harmony and detection of missing ninths even when chord labels are correct.
+- Rejection of piano material assigned to Whistle and attempts to bypass lead provenance using editorial labels.
+- Lead pitch classes, backing-role interpretation, immutable source candidates, single-person VP, and broken ties.
+- Event comparisons across eight MusicXML/MIDI pairs, including 3/4, 6/8, short final bars, tempo changes, and merged ties.
+- Native tool requests, JSON fallback, credential redaction, no retry on 401, bounded retries on 429, persistent budgets, invalid URLs, and malformed tool responses.
+- Path boundaries, single-writer run locks, and rejection of incomplete scores as completed work.
+- Export validation covering the whole song and matching the exact score digest, preventing stale checks from approving modified scores.
+- Prime file credentials, environment precedence, optional team billing, usage requests, missing-key handling, and two simulated tool-call turns.
 
-HTTP 测试使用内存中的模拟响应器，验证实际请求构造与响应解析；不声称连通了 MIT Parley。
+HTTP tests use in-memory response doubles. They verify request construction and response parsing rather than connectivity to Prime or Parley. A clean export of the staged source passed all 29 tests without local data or secrets before the initial GitHub upload.
 
-## 实际音频分析冒烟测试
+## Historical audio analysis smoke test
 
-输入：已有 EYKM 原音频的 30–38 秒片段，以及相邻项目已经生成的六轨分离文件的同一片段。没有重跑原曲全长 Demucs。
+Input: seconds 30-38 of the existing EYKM recording and matching excerpts of six previously separated stems from the neighboring project. Full-length Demucs separation was not rerun.
 
-实际执行 FFmpeg → 本地 Basic Pitch ONNX → 时间/和声/鼓起音分析，结果：
+The test executed FFmpeg, local Basic Pitch ONNX inference, and timing, harmony, and drum-onset analysis:
 
-| 项目 | 结果 |
+| Metric | Result |
 |---|---:|
-| 输入长度 | 8 秒 |
-| 音符候选 | 194 |
-| 小节 | 6 |
-| 半小节和声候选片段 | 12 |
-| 鼓起音候选 | 120 |
+| Input duration | 8 seconds |
+| Note candidates | 194 |
+| Bars | 6 |
+| Half-bar harmony segments | 12 |
+| Drum-onset candidates | 120 |
 
-时拍配置显式为 126 BPM、3/4，不把这次测试写成自动拍号识别的准确性验证。输出在 `runs/analysis-smoke/evidence.json`，日志在 `runs/analysis-smoke/logs/analysis.log`。这些计数证明工具完成执行，不是转写精度指标；鼓频带重复触发仍交给后续单人口技选取处理。
+Timing was explicitly configured as 126 BPM in 3/4. This does not validate automatic meter detection. Local output: `runs/analysis-smoke/evidence.json`; log: `runs/analysis-smoke/logs/analysis.log`. These counts demonstrate execution, not transcription accuracy. Duplicate detections across drum bands still require selection for single-person VP.
 
-## 完整离线交付测试
+## Complete offline delivery test
 
-`runs/demo-final` 使用 8 秒原创建模测试音频、已知证据与显式 scripted provider：
+The local `runs/demo-final` used eight seconds of original synthetic test audio, known evidence, and an explicit scripted provider:
 
-- 4 小节，包含 Cadd9、G7/B、Am7、Fadd9，钢琴运动线、背景人声和只出现于指定段落的 flute。
-- 8 份 MusicXML、8 份 MIDI、8 份 PDF。
-- 16 条 WAV 和 16 条 MP3：全混音、去主唱、7 独立声部、7 突出声部练习音轨。
-- 音频 44.1 kHz；8 秒音乐 + 2.5 秒采样释放；全混音峰值约 0.91。
-- 使用本地 MS Basic.sf3 中的 41 个采样；不是 MuseScore 音频引擎。未混入原录音。
-- WAV 与 MP3 长度检查通过；MusicXML/MIDI 事件检查通过。
-- 总谱 PDF 已转成图片检查，包含七谱表、音符/休止、临时记号、延音、VP 音节、和弦与拍号。它是 proof 校样，不是出版排版质量认证。
+- Four bars containing Cadd9, G7/B, Am7, and Fadd9, with moving piano lines, backing vocals, and flute restricted to designated passages.
+- Eight MusicXML files, eight MIDI files, and eight PDFs.
+- Sixteen WAV and sixteen MP3 files: full mix, no-lead accompaniment, seven isolated parts, and seven part-emphasized practice mixes.
+- Audio at 44.1 kHz, with eight seconds of music and 2.5 seconds of sample release; full-mix peak approximately 0.91.
+- Forty-one samples from local MS Basic.sf3, rendered by the project sampler rather than the MuseScore audio engine. No source recording was mixed in.
+- Passing WAV/MP3 duration checks and MusicXML/MIDI event checks.
+- Full-score PDF rendered to images for inspection of seven staves, notes, rests, accidentals, ties, VP syllables, chords, and meters. This validates a proof score, not publication engraving quality.
 
-## 尚未完成的真实外部验证
+## External validation still outstanding
 
-- 当前没有 `PARLEY_API_KEY` / `PARLEY_BASE_URL` / `PARLEY_MODEL`；未连接 MIT 生产 API，未衡量真实 LLM 编配能力。
-- 未从头重新下载/运行 Demucs 全曲分离；适配器依赖用户环境里可工作的 Demucs 安装与模型。
-- GAME 已从原工作流适配，但本次没有重新运行其模型推理。
-- MuseScore 与 FluidSynth 是显式可选导出后端；本次实际验收的是采样后端与 proof PDF。
-- 没有真人逐音听审、独立旋律准确率评测、自动长笛身份分类或完整歌词识别/强制对齐。
+- Live Prime inference and model-specific tool compatibility have not been verified with a real Prime key.
+- Full-song Demucs separation has not been downloaded and rerun from scratch; the adapter requires a working local installation and models.
+- GAME was adapted from the earlier workflow, but its inference was not rerun during these checks.
+- MuseScore and FluidSynth are optional explicit backends; the delivery checks above used the sampler and proof PDF backend.
+- No human note-by-note listening review, independent melody-accuracy evaluation, automatic flute classification, or complete lyric recognition/forced alignment has been completed.
 
-本项目的成功交付状态因此始终保留 `human_listening_review: false`。
+Successful delivery therefore retains `human_listening_review: false`.
 
+## Historical live Parley checks
 
-## 2026-11-13 Sonnet 5.5 EYKM 全曲实测
+Two-turn tool calls were verified with Sonnet 4.6 and Sonnet 5.5 through Parley, using 1,358 and 945 tokens respectively. These checks are distinct from the offline tests and do not establish Prime compatibility.
 
-- 198 小节，编配与独立审校均使用真实 Parley `claude-sonnet-5-5`。
-- 原始完整第一轮与审校后版本分别保存在 `outputs/EYKM_Sonnet55/original` 和 `reviewed`；第一轮模型对话及工具日志另存。
-- 原始版零硬性错误、118 条警告；审校后零硬性错误、55 条长乐句提醒，尚未真人听审。
-- 两版各 8 PDF、8 MusicXML、8 MIDI、16 WAV、16 MP3，音轨均为 298.72 秒。每版 95 个导出文件的哈希校验通过；MusicXML/MIDI 逐音核对通过。
-- 28 项测试通过；已抽查原始与审校总谱、歌词页和 VP 页。对比页面的段落定位与同位置切换通过浏览器验证。
-- 原始音频未发送到 LLM；沿用 V3 时间、主唱/歌词及和声参考，器乐使用已有转写候选，SATB/VP 经新模型工具编配。
-- 成本范围和精确文件位置见 `outputs/EYKM_Sonnet55/usage-and-validation.json` 与 `comparison.json`。
+## 2026-11-13 Sonnet 5.5 full-song EYKM run
+
+- All 198 bars were arranged and independently reviewed using live Parley `claude-sonnet-5-5` calls.
+- The complete first pass and reviewed version remain locally under `outputs/EYKM_Sonnet55/original` and `reviewed`. First-pass conversations and tool logs were preserved separately.
+- The first pass had no hard errors and 118 warnings. The reviewed version had no hard errors and 55 long-phrase reminders. Human listening review remains outstanding.
+- Each version included eight PDFs, eight MusicXML files, eight MIDI files, sixteen WAV files, and sixteen MP3 files. Tracks were 298.72 seconds. Hash checks passed for 95 exported files per version, and MusicXML/MIDI note comparisons passed.
+- Twenty-eight tests passed at that stage. Original and reviewed full scores, lyric pages, and VP pages were spot-checked. Section seeking and synchronized version switching on the comparison page were verified in a browser.
+- Original audio was not sent to the LLM. Timing, lead/lyrics, and harmony references came from v3, with existing instrumental transcription candidates. SATB and VP were newly arranged through model tool calls.
+- Cost scope and exact local file locations were recorded in `outputs/EYKM_Sonnet55/usage-and-validation.json` and `comparison.json`.
