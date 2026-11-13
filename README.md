@@ -29,9 +29,3 @@ Install audio analysis, rendering, and font dependencies as described in the sys
 Copy `agent_system/secrets/prime.env.example` to `prime.env` in the same directory and set `PRIME_API_KEY`. Edit an existing file directly. Optional `PRIME_MODEL` and `PRIME_TEAM_ID` values select the model and billing team. Environment variables override file values.
 
 Actual credentials, environment files, recordings, run directories, experimental results, models, and local dependencies are excluded from version control. The example model is `z-ai/glm-5.3`; consult the Prime model catalog for availability and tool capabilities. Generated arrangements require human listening review.
-
-## Ongoing development
-
-This directory is connected to `Benzoin96485/macapakka` on GitHub. Continue development and commit changes here. Tests and configuration instructions are maintained under `agent_system/`. Historical experimental data remains in its original local location and is not uploaded.
-
-Repository documentation is maintained in English.
